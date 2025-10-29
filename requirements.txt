@@ -1,7 +1,1 @@
 streamlit==1.30.0
-moviepy==2.0.0.dev8
-python-magic==0.4.27
-rich==14.2.0
-pygments==2.19.2
-markdown-it-py==4.0.0
-mdurl==0.1.2
