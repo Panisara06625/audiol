@@ -1,93 +1,32 @@
 import streamlit as st
-from moviepy.editor import VideoFileClip
-import tempfile, os, base64, mimetypes
-import magic
-import imageio
-imageio.plugins.ffmpeg.download()  # Only needed for some versions
-
+import base64
 
 st.set_page_config(page_title="Audio Mixer (Streamlit)", layout="wide")
 
-st.title("Audio Mixer — Streamlit + Multitouch + Video→MP3")
+st.title("Audio Mixer — Streamlit (Audio Only)")
+
 st.markdown(
     """
-Upload audio or video files (mp4, mov, mkv, etc.). Video files are automatically
-converted to MP3. The embedded player supports looping, per-track 0–300% volume,
-single/mix mode, and multitouch-friendly pads for iPad.
+Upload audio files (MP3, WAV, OGG, etc.).  
+You can play multiple files, adjust each volume (0–300%), loop, and select single/mix mode.
 """
 )
 
-# --- Upload files ---
+# --- Upload audio files only ---
 uploaded = st.file_uploader(
-    "Upload audio or video files (multiple)",
-    accept_multiple_files=True,
-    type=None,
+    "Upload audio files (multiple)", accept_multiple_files=True, type=['mp3','wav','ogg']
 )
 
-converted_files = []
-
-if uploaded:
-    for up in uploaded:
-        up_bytes = up.read()
-        up.seek(0)
-        try:
-            mime = magic.from_buffer(up_bytes, mime=True)
-        except Exception:
-            mime = mimetypes.guess_type(up.name)[0] or "application/octet-stream"
-
-        name = up.name
-        is_video = (mime and mime.startswith("video")) or os.path.splitext(name)[1].lower() in (
-            ".mp4", ".mov", ".mkv", ".avi", ".webm"
-        )
-
-        if is_video:
-            st.info(f"Converting video → MP3: {name}")
-            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(name)[1]) as tmp_in:
-                tmp_in.write(up_bytes)
-                tmp_in_path = tmp_in.name
-
-            try:
-                clip = VideoFileClip(tmp_in_path)
-                with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as tmp_out:
-                    tmp_out_path = tmp_out.name
-                clip.audio.write_audiofile(tmp_out_path, logger=None, bitrate="192k")
-                clip.close()
-                with open(tmp_out_path, "rb") as f:
-                    mp3_bytes = f.read()
-                converted_files.append({
-                    "name": os.path.splitext(name)[0] + ".mp3",
-                    "mime": "audio/mpeg",
-                    "data": mp3_bytes
-                })
-            except Exception as e:
-                st.error(f"Conversion failed for {name}: {e}")
-            finally:
-                try: os.remove(tmp_in_path)
-                except: pass
-                try: os.remove(tmp_out_path)
-                except: pass
-        else:
-            converted_files.append({"name": name, "mime": mime or "audio/*", "data": up_bytes})
-
-if converted_files:
-    cols = st.columns([4,1])
-    with cols[0]:
-        for f in converted_files:
-            st.write(f"- {f['name']} ({f['mime']})")
-    with cols[1]:
-        for f in converted_files:
-            st.download_button("Download", data=f["data"], file_name=f["name"], mime=f["mime"])
-
-if not converted_files:
-    st.info("Upload files to enable the player.")
+if not uploaded:
+    st.info("Upload audio files to enable the player.")
     st.stop()
 
-# --- Prepare base64 data URLs ---
+# --- Prepare base64 data for JS player ---
 tracks_for_js = []
-for idx, f in enumerate(converted_files):
-    b64 = base64.b64encode(f["data"]).decode("ascii")
-    data_url = f"data:{f['mime']};base64,{b64}"
-    tracks_for_js.append({"id": idx, "name": f["name"], "url": data_url})
+for idx, f in enumerate(uploaded):
+    b64 = base64.b64encode(f.read()).decode("ascii")
+    data_url = f"data:audio/mpeg;base64,{b64}"
+    tracks_for_js.append({"id": idx, "name": f.name, "url": data_url})
 
 # --- HTML/JS Player ---
 html = f"""
@@ -117,7 +56,6 @@ h2{{margin:0 0 8px;font-size:18px}}
 <body>
 <div class="player">
 <h2>Embedded Audio Mixer</h2>
-<p style="color:#9ca3af;margin-top:6px;margin-bottom:12px">Play, loop, multitouch pads for volume (0–300%)</p>
 <div class="controls">
 <div class="mode">
 <label style="font-weight:600;color:#cfe8ff;margin-right:8px">Mode:</label>
@@ -126,7 +64,6 @@ h2{{margin:0 0 8px;font-size:18px}}
 </div>
 </div>
 <div id="tracks"></div>
-<div style="color:#9ca3af;margin-top:8px;font-size:13px">Tip: On iPad, use multiple fingers on different pads to adjust volumes simultaneously.</div>
 </div>
 
 <script>
@@ -228,12 +165,3 @@ tracksData.forEach(td=>{{
 """
 
 st.components.v1.html(html, height=700, scrolling=True)
-
-st.markdown(
-    """
-**Notes:**
-- Base64 embedding is fine for small/medium files. For large files, host MP3s externally and pass URLs.
-- Multitouch pads allow simultaneous volume control on iPad.
-"""
-)
-
