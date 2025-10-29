@@ -2,6 +2,9 @@ import streamlit as st
 from moviepy.editor import VideoFileClip
 import tempfile, os, base64, mimetypes
 import magic
+import imageio
+imageio.plugins.ffmpeg.download()  # Only needed for some versions
+
 
 st.set_page_config(page_title="Audio Mixer (Streamlit)", layout="wide")
 
@@ -233,3 +236,4 @@ st.markdown(
 - Multitouch pads allow simultaneous volume control on iPad.
 """
 )
+
