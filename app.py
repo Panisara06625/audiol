@@ -43,7 +43,16 @@ button.play{background:linear-gradient(90deg,var(--accent),var(--accent2)); colo
 button.play:hover{filter:brightness(1.1); transform:scale(1.03);}
 button.stop{background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--accent);}
 .vol{display:flex; gap:8px; align-items:center;}
-input[type=range]{width:150px; accent-color:var(--accent);}
+input[type=range]{width:150px; accent-color: var(--accent); height:12px; border-radius:6px; background: rgba(255,255,255,0.2);}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance:none; width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer; margin-top:-8px;
+}
+input[type=range]::-moz-range-thumb {
+  width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer;
+}
+input[type=range]::-moz-range-track {
+  height:12px; border-radius:6px; background: rgba(255,255,255,0.2);
+}
 .footer{margin-top:20px; color:var(--muted); font-size:13px;}
 @media(max-width:720px){.item{grid-template-columns:1fr;}}
 </style>
@@ -52,7 +61,7 @@ input[type=range]{width:150px; accent-color:var(--accent);}
 <div class="app">
 <h1>Audio Mixer — เว็บแอป</h1>
 <p class="lead">
-เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ มี 2 โหมด: Single (หยุดเสียงอื่นเมื่อเล่นใหม่) และ Mix (เล่นทับกันได้)  
+เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ มี 2 โหมด: Single (หยุดเสียงอื่นเมื่อเล่นใหม่) และ Mix (เล่นทับกันได้)<br>
 ปรับเสียงแต่ละไฟล์ได้ถึง 300% และเสียงจะวนอัตโนมัติ
 </p>
 
