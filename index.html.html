@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Audio Mixer — Web App</title>
+  <style>
+    :root {
+      --bg: #0f1724;
+      --card: #111827;
+      --muted: #9ca3af;
+      --accent: #60a5fa;
+      --accent2: #a855f7;
+    }
+    body {
+      font-family: Inter, system-ui, sans-serif;
+      color: #e6eef8;
+      background: linear-gradient(180deg, #071126 0%, #081a2d 100%);
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .app {
+      width: 95%;
+      max-width: 960px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 16px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+      padding: 24px;
+    }
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.4rem;
+    }
+    p.lead {
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    input[type=file] { color: #ccc; }
+    .mode {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: rgba(255,255,255,0.05);
+      padding: 8px 12px;
+      border-radius: 10px;
+    }
+    .mode label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .item {
+      background: rgba(255,255,255,0.04);
+      border-radius: 12px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 220px;
+      align-items: center;
+      gap: 12px;
+    }
+    .meta { display: flex; flex-direction: column; gap: 6px; }
+    .title { font-weight: 600; }
+    .sub { font-size: 13px; color: var(--muted); }
+    .progress { height: 6px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; }
+    .progress > i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); width: 0%; transition: width 0.2s; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-weight: 500;
+      transition: 0.2s;
+    }
+    button.play {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      color: white;
+    }
+    button.play:hover { filter: brightness(1.1); transform: scale(1.03); }
+    button.remove {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--muted);
+    }
+    .vol {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type=range] { width: 150px; accent-color: var(--accent); }
+    .footer {
+      margin-top: 20px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+    @media (max-width:720px){
+      .item { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <h1>Audio Mixer — เว็บแอป</h1>
+    <p class="lead">
+      เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ มี 2 โหมด: Single (หยุดเสียงอื่นเมื่อเล่นใหม่) และ Mix (เล่นทับกันได้)
+      สามารถปรับเสียงแต่ละไฟล์ได้ถึง 300% และเสียงจะเล่นวนอัตโนมัติ
+    </p>
+
+    <div class="controls">
+      <input id="file" type="file" accept="audio/*" multiple />
+      <button id="clearAll" class="remove">ลบทั้งหมด</button>
+      <div class="mode">
+        <label style="font-weight:600;color:#cde7ff;">Mode:</label>
+        <label><input type="radio" name="mode" value="single" checked /> Single</label>
+        <label><input type="radio" name="mode" value="mix" /> Mix</label>
+      </div>
+    </div>
+
+    <div id="list" class="list"></div>
+
+    <div class="footer">Tip: ปรับ Volume slider เพื่อเพิ่มเสียงสูงสุด 300%. ระบบจะวนเสียงโดยอัตโนมัติ.</div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('file');
+    const listEl = document.getElementById('list');
+    const clearAllBtn = document.getElementById('clearAll');
+    const tracks = [];
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function formatTime(s){
+      if(isNaN(s)) return '0:00';
+      const m = Math.floor(s/60);
+      const sec = Math.floor(s%60).toString().padStart(2,'0');
+      return `${m}:${sec}`;
+    }
+    function getMode(){ return document.querySelector('input[name="mode"]:checked').value; }
+    function stopOtherTracks(exceptId){
+      for(const t of tracks){
+        if(t.id !== exceptId && !t.audio.paused){
+          t.audio.pause();
+          t.audio.currentTime = 0;
+          updatePlayButton(t.id, false);
+        }
+      }
+    }
+    function updatePlayButton(id, isPlaying){
+      const btn = document.querySelector(`#btn-${id}`);
+      if(!btn) return;
+      btn.textContent = isPlaying ? 'Stop' : 'Play';
+      btn.className = isPlaying ? 'remove' : 'play';
+    }
+
+    function createTrackRow(file){
+      const id = Math.random().toString(36).slice(2,9);
+      const url = URL.createObjectURL(file);
+      const audio = new Audio(url);
+      audio.loop = true;
+      const source = audioCtx.createMediaElementSource(audio);
+      const gainNode = audioCtx.createGain();
+      source.connect(gainNode).connect(audioCtx.destination);
+      gainNode.gain.value = 1.0;
+
+      const item = document.createElement('div');
+      item.className = 'item';
+      item.id = 'item-'+id;
+      item.innerHTML = `
+        <div class="meta">
+          <div class="title">${file.name.replaceAll('<','&lt;')}</div>
+          <div class="sub"><span id="time-${id}">0:00</span> / <span id="dur-${id}">0:00</span></div>
+          <div class="progress" id="prog-${id}"><i></i></div>
+        </div>
+        <div class="controls-row" style="display:flex;flex-direction:column;gap:8px;">
+          <button id="btn-${id}" class="play">Play</button>
+          <div class="vol">
+            <label class="sub">Volume</label>
+            <input id="vol-${id}" type="range" min="0" max="3" step="0.01" value="1" />
+          </div>
+        </div>
+      `;
+      listEl.appendChild(item);
+      tracks.push({id, audio});
+
+      audio.addEventListener('loadedmetadata', ()=>{
+        document.getElementById('dur-'+id).textContent = formatTime(audio.duration);
+      });
+      audio.addEventListener('timeupdate', ()=>{
+        const t = document.getElementById('time-'+id);
+        const p = document.querySelector('#prog-'+id+ ' > i');
+        t.textContent = formatTime(audio.currentTime);
+        const pct = audio.duration ? (audio.currentTime/audio.duration*100) : 0;
+        p.style.width = pct + '%';
+      });
+
+      const btn = document.getElementById('btn-'+id);
+      btn.addEventListener('click', ()=>{
+        if(audio.paused){
+          audioCtx.resume();
+          if(getMode() === 'single') stopOtherTracks(id);
+          audio.play();
+          updatePlayButton(id, true);
+        } else {
+          audio.pause();
+          audio.currentTime = 0;
+          updatePlayButton(id, false);
+        }
+      });
+
+      document.getElementById('vol-'+id).addEventListener('input', e=>{
+        gainNode.gain.value = parseFloat(e.target.value);
+      });
+    }
+
+    fileInput.addEventListener('change', e=>{
+      const files = Array.from(e.target.files||[]);
+      for(const f of files){
+        if(f.type.startsWith('audio')) createTrackRow(f);
+      }
+      fileInput.value = '';
+    });
+    clearAllBtn.addEventListener('click', ()=>{
+      for(const t of tracks){ t.audio.pause(); t.audio.src=''; }
+      listEl.innerHTML = ''; tracks.length=0;
+    });
+  </script>
+</body>
+</html>
