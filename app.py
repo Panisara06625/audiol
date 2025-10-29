@@ -126,7 +126,7 @@ html = f"""
   .pad{{height:90px;background:linear-gradient(180deg,rgba(255,255,255,0.01),rgba(255,255,255,0.02));border-radius:8px;display:flex;align-items:center;justify-content:center;touch-action:none;user-select:none}}
   .pad .label{{font-size:13px;color:#cfe8ff}}
   .vol-info{{font-size:13px;color:#9ca3af;margin-left:8px;width:58px;text-align:center}}
-  @media(max-width:720px){.track{{grid-template-columns:1fr}}}
+  @media(max-width:720px){{.track{{grid-template-columns:1fr}}}}
 </style>
 </head>
 <body>
@@ -306,3 +306,4 @@ st.markdown(
 - The multitouch pads are handled via `touch`/`pointer` events — they allow multiple fingers on different pads (e.g., iPad).
 """
 )
+
