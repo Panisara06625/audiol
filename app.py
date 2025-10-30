@@ -1,14 +1,20 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
+# Remove default Streamlit UI and make fullscreen
 st.set_page_config(page_title="Audio Mixer", layout="wide")
 
+# Hide Streamlit default header, footer, and padding
 st.markdown("""
     <style>
-    .block-container { padding: 0 !important; margin: 0 !important; }
+    #MainMenu {visibility: hidden;}
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    .block-container {padding: 0 !important; margin: 0 !important;}
     </style>
 """, unsafe_allow_html=True)
 
+# Custom HTML Player
 html_code = """
 <!doctype html>
 <html lang="th">
@@ -35,13 +41,26 @@ body {
   border-radius:16px;
   backdrop-filter:blur(8px);
 }
-p.lead{color:var(--muted); margin-bottom:20px;font-size:0.9rem;}
-.controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;}
+p.lead {
+  color:var(--muted);
+  margin-bottom:20px;
+  font-size:0.9rem;
+}
+.controls {
+  display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;
+}
 input[type=file]{color:#ccc;}
-.mode{display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px;}
+.mode {
+  display:flex; gap:8px; align-items:center;
+  background:rgba(255,255,255,0.05);
+  padding:8px 12px; border-radius:10px;
+}
 .mode label{font-size:13px;color:var(--muted);}
-.list{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
-.item{
+.list {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr));
+  gap:14px;
+}
+.item {
   background:rgba(255,255,255,0.05);
   border-radius:12px;
   padding:14px;
@@ -52,22 +71,51 @@ input[type=file]{color:#ccc;}
 .meta{display:flex; flex-direction:column; gap:6px;}
 .title{font-weight:600;}
 .sub{font-size:13px; color:var(--muted);}
-.progress{height:6px; background:rgba(255,255,255,0.08); border-radius:6px; overflow:hidden;}
-.progress>i{display:block;height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:0.2s;}
-button{cursor:pointer; border:none; border-radius:8px; padding:8px 12px; font-weight:500; transition:0.2s;}
-button.play{background:linear-gradient(90deg,var(--accent),var(--accent2)); color:white;}
+.progress{
+  height:6px; background:rgba(255,255,255,0.08);
+  border-radius:6px; overflow:hidden;
+}
+.progress>i{
+  display:block; height:100%;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  width:0%; transition:0.2s;
+}
+button{
+  cursor:pointer; border:none; border-radius:8px;
+  padding:8px 12px; font-weight:500; transition:0.2s;
+}
+button.play{
+  background:linear-gradient(90deg,var(--accent),var(--accent2)); color:white;
+}
 button.play:hover{filter:brightness(1.1); transform:scale(1.03);}
-button.stop{background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--accent);}
+button.stop{
+  background:transparent; border:1px solid rgba(255,255,255,0.1);
+  color:var(--accent);
+}
 .vol{display:flex; gap:8px; align-items:center;}
-.loopopt{display:flex; gap:6px; align-items:center; font-size:13px; color:var(--muted);}
-input[type=range]{width:100%; accent-color: var(--accent); height:12px; border-radius:6px; background: rgba(255,255,255,0.2);}
+.loopopt{
+  display:flex; gap:6px; align-items:center;
+  font-size:13px; color:var(--muted);
+}
+input[type=range]{
+  width:100%; accent-color: var(--accent);
+  height:14px; border-radius:6px;
+  background: rgba(255,255,255,0.2);
+}
 input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance:none; width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer; margin-top:-8px;
+  -webkit-appearance:none; width:32px; height:32px;
+  background: var(--accent); border-radius:50%;
+  border:2px solid white; cursor:pointer; margin-top:-9px;
 }
 input[type=range]::-moz-range-thumb {
-  width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer;
+  width:32px; height:32px;
+  background: var(--accent); border-radius:50%;
+  border:2px solid white; cursor:pointer;
 }
-.footer{margin-top:20px; color:var(--muted); font-size:13px;}
+.footer{
+  margin-top:20px; color:var(--muted); font-size:13px;
+  text-align:center;
+}
 </style>
 </head>
 <body>
@@ -89,7 +137,9 @@ input[type=range]::-moz-range-thumb {
 
 <div id="list" class="list"></div>
 
-<div class="footer">Tip: ปรับ Volume เพื่อเพิ่มเสียงสูงสุด 300% และเลือก Loop เพื่อให้เสียงเล่นซ้ำอัตโนมัติ.</div>
+<div class="footer">
+Tip: ปรับ Volume เพื่อเพิ่มเสียงสูงสุด 300% และเลือก Loop เพื่อให้เสียงเล่นซ้ำอัตโนมัติ.
+</div>
 </div>
 
 <script>
@@ -99,11 +149,19 @@ const clearAllBtn=document.getElementById('clearAll');
 const tracks=[];
 const audioCtx=new (window.AudioContext||window.webkitAudioContext)();
 
-function formatTime(s){if(isNaN(s))return '0:00';const m=Math.floor(s/60);const sec=Math.floor(s%60).toString().padStart(2,'0');return `${m}:${sec}`;}
+function formatTime(s){
+  if(isNaN(s)) return '0:00';
+  const m=Math.floor(s/60);
+  const sec=Math.floor(s%60).toString().padStart(2,'0');
+  return `${m}:${sec}`;
+}
 function getMode(){return document.querySelector('input[name="mode"]:checked').value;}
 function stopOtherTracks(exceptId){
   for(const t of tracks){
-    if(t.id!==exceptId&&!t.audio.paused){t.audio.pause(); t.audio.currentTime=0; t.btn.textContent='Play'; t.btn.className='play';}
+    if(t.id!==exceptId&&!t.audio.paused){
+      t.audio.pause(); t.audio.currentTime=0;
+      t.btn.textContent='Play'; t.btn.className='play';
+    }
   }
 }
 
@@ -111,9 +169,10 @@ function createTrackRow(file){
   const id=Math.random().toString(36).slice(2,9);
   const url=URL.createObjectURL(file);
   const audio=new Audio(url);
-  audio.loop=true; // default loop = true
+  audio.loop=true;
   const source=audioCtx.createMediaElementSource(audio);
-  const gainNode=audioCtx.createGain(); gainNode.gain.value=1.0;
+  const gainNode=audioCtx.createGain();
+  gainNode.gain.value=1.0;
   source.connect(gainNode).connect(audioCtx.destination);
 
   const item=document.createElement('div');
@@ -145,7 +204,10 @@ function createTrackRow(file){
     if(audio.paused){
       if(getMode()==='single') stopOtherTracks(id);
       audio.play(); btn.textContent='Stop'; btn.className='stop';
-    } else { audio.pause(); audio.currentTime=0; btn.textContent='Play'; btn.className='play'; }
+    } else {
+      audio.pause(); audio.currentTime=0;
+      btn.textContent='Play'; btn.className='play';
+    }
   });
 
   audio.addEventListener('loadedmetadata',()=>{document.getElementById('dur-'+id).textContent=formatTime(audio.duration);});
@@ -157,13 +219,18 @@ function createTrackRow(file){
     p.style.width=pct+'%';
   });
 
-  document.getElementById('vol-'+id).addEventListener('input',e=>{gainNode.gain.value=parseFloat(e.target.value);});
+  document.getElementById('vol-'+id).addEventListener('input',e=>{
+    gainNode.gain.value=parseFloat(e.target.value);
+  });
+
   tracks.push({id,audio,btn,gainNode});
 }
 
 fileInput.addEventListener('change',e=>{
   const files=Array.from(e.target.files||[]);
-  for(const f of files){if(f.type.startsWith('audio')) createTrackRow(f);}
+  for(const f of files){
+    if(f.type.startsWith('audio')) createTrackRow(f);
+  }
   fileInput.value='';
 });
 
@@ -176,4 +243,4 @@ clearAllBtn.addEventListener('click',()=>{
 </html>
 """
 
-components.html(html_code, height=850, scrolling=True)
+components.html(html_code, height=950, scrolling=True)
