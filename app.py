@@ -3,7 +3,12 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Audio Mixer", layout="wide")
 
-st.title("Audio Mixer — เว็บแอป")
+# Remove Streamlit’s default title bar padding
+st.markdown("""
+    <style>
+    .block-container { padding: 0 !important; margin: 0 !important; }
+    </style>
+""", unsafe_allow_html=True)
 
 html_code = """
 <!doctype html>
@@ -19,20 +24,32 @@ body {
   font-family: Inter, system-ui, sans-serif;
   color: #e6eef8;
   background: linear-gradient(180deg,#071126 0%,#081a2d 100%);
-  margin:0; min-height:100vh; display:flex; justify-content:center; align-items:center;
+  margin:0;
+  min-height:100vh;
 }
 .app {
-  width:100%; max-width:960px; background:rgba(255,255,255,0.05); border-radius:16px; backdrop-filter:blur(10px);
-  box-shadow:0 8px 40px rgba(0,0,0,0.5); padding:24px;
+  width:100%;
+  max-width:1600px;
+  margin:auto;
+  padding:32px;
+  background:rgba(255,255,255,0.04);
+  border-radius:16px;
+  backdrop-filter:blur(8px);
 }
-h1{margin:0 0 8px;font-size:1.4rem;}
 p.lead{color:var(--muted); margin-bottom:20px;font-size:0.9rem;}
 .controls{display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;}
 input[type=file]{color:#ccc;}
 .mode{display:flex; gap:8px; align-items:center; background:rgba(255,255,255,0.05); padding:8px 12px; border-radius:10px;}
 .mode label{font-size:13px;color:var(--muted);}
-.list{display:flex; flex-direction:column; gap:12px;}
-.item{background:rgba(255,255,255,0.04); border-radius:12px; padding:14px; display:grid; grid-template-columns:1fr 220px; align-items:center; gap:12px;}
+.list{display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:14px;}
+.item{
+  background:rgba(255,255,255,0.05);
+  border-radius:12px;
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
 .meta{display:flex; flex-direction:column; gap:6px;}
 .title{font-weight:600;}
 .sub{font-size:13px; color:var(--muted);}
@@ -43,26 +60,21 @@ button.play{background:linear-gradient(90deg,var(--accent),var(--accent2)); colo
 button.play:hover{filter:brightness(1.1); transform:scale(1.03);}
 button.stop{background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--accent);}
 .vol{display:flex; gap:8px; align-items:center;}
-input[type=range]{width:150px; accent-color: var(--accent); height:12px; border-radius:6px; background: rgba(255,255,255,0.2);}
+input[type=range]{width:100%; accent-color: var(--accent); height:12px; border-radius:6px; background: rgba(255,255,255,0.2);}
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance:none; width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer; margin-top:-8px;
 }
 input[type=range]::-moz-range-thumb {
   width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer;
 }
-input[type=range]::-moz-range-track {
-  height:12px; border-radius:6px; background: rgba(255,255,255,0.2);
-}
 .footer{margin-top:20px; color:var(--muted); font-size:13px;}
-@media(max-width:720px){.item{grid-template-columns:1fr;}}
 </style>
 </head>
 <body>
 <div class="app">
-<h1>Audio Mixer — เว็บแอป</h1>
 <p class="lead">
-เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ มี 2 โหมด: Single (หยุดเสียงอื่นเมื่อเล่นใหม่) และ Mix (เล่นทับกันได้)<br>
-ปรับเสียงแต่ละไฟล์ได้ถึง 300% และเสียงจะวนอัตโนมัติ
+เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ (Single หรือ Mix Mode)<br>
+ปรับเสียงแต่ละไฟล์ได้สูงสุด 300% และเสียงจะวนอัตโนมัติ
 </p>
 
 <div class="controls">
@@ -111,12 +123,10 @@ function createTrackRow(file){
     <div class="sub"><span id="time-${id}">0:00</span> / <span id="dur-${id}">0:00</span></div>
     <div class="progress" id="prog-${id}"><i></i></div>
   </div>
-  <div style="display:flex;flex-direction:column;gap:8px;">
-    <button id="btn-${id}" class="play">Play</button>
-    <div class="vol">
-      <label class="sub">Volume</label>
-      <input id="vol-${id}" type="range" min="0" max="3" step="0.01" value="1"/>
-    </div>
+  <button id="btn-${id}" class="play">Play</button>
+  <div class="vol">
+    <label class="sub">Volume</label>
+    <input id="vol-${id}" type="range" min="0" max="3" step="0.01" value="1"/>
   </div>`;
   listEl.appendChild(item);
 
@@ -157,4 +167,4 @@ clearAllBtn.addEventListener('click',()=>{
 </html>
 """
 
-components.html(html_code, height=700, scrolling=True)
+components.html(html_code, height=850, scrolling=True)
