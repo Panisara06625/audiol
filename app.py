@@ -3,7 +3,6 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Audio Mixer", layout="wide")
 
-# Remove Streamlit’s default title bar padding
 st.markdown("""
     <style>
     .block-container { padding: 0 !important; margin: 0 !important; }
@@ -60,6 +59,7 @@ button.play{background:linear-gradient(90deg,var(--accent),var(--accent2)); colo
 button.play:hover{filter:brightness(1.1); transform:scale(1.03);}
 button.stop{background:transparent; border:1px solid rgba(255,255,255,0.1); color:var(--accent);}
 .vol{display:flex; gap:8px; align-items:center;}
+.loopopt{display:flex; gap:6px; align-items:center; font-size:13px; color:var(--muted);}
 input[type=range]{width:100%; accent-color: var(--accent); height:12px; border-radius:6px; background: rgba(255,255,255,0.2);}
 input[type=range]::-webkit-slider-thumb {
   -webkit-appearance:none; width:28px; height:28px; background: var(--accent); border-radius:50%; border:2px solid white; cursor:pointer; margin-top:-8px;
@@ -74,7 +74,7 @@ input[type=range]::-moz-range-thumb {
 <div class="app">
 <p class="lead">
 เพิ่มไฟล์เสียงหลายไฟล์ แล้วเลือกเล่นทีละไฟล์หรือเล่นพร้อมกันได้ (Single หรือ Mix Mode)<br>
-ปรับเสียงแต่ละไฟล์ได้และเสียงจะวนอัตโนมัติ
+ปรับเสียงแต่ละไฟล์ได้สูงสุด 300% และเลือกได้ว่าจะวนเสียงหรือไม่
 </p>
 
 <div class="controls">
@@ -89,7 +89,7 @@ input[type=range]::-moz-range-thumb {
 
 <div id="list" class="list"></div>
 
-<div class="footer">Tip: ปรับ Volume slider เพื่อเพิ่มเสียงสูงสุด 300%. ระบบจะวนเสียงโดยอัตโนมัติ.</div>
+<div class="footer">Tip: ปรับ Volume เพื่อเพิ่มเสียงสูงสุด 300% และเลือก Loop เพื่อให้เสียงเล่นซ้ำอัตโนมัติ.</div>
 </div>
 
 <script>
@@ -110,7 +110,8 @@ function stopOtherTracks(exceptId){
 function createTrackRow(file){
   const id=Math.random().toString(36).slice(2,9);
   const url=URL.createObjectURL(file);
-  const audio=new Audio(url); audio.loop=true;
+  const audio=new Audio(url);
+  audio.loop=true; // default loop = true
   const source=audioCtx.createMediaElementSource(audio);
   const gainNode=audioCtx.createGain(); gainNode.gain.value=1.0;
   source.connect(gainNode).connect(audioCtx.destination);
@@ -127,10 +128,18 @@ function createTrackRow(file){
   <div class="vol">
     <label class="sub">Volume</label>
     <input id="vol-${id}" type="range" min="0" max="3" step="0.01" value="1"/>
-  </div>`;
+  </div>
+  <div class="loopopt">
+    <input id="loop-${id}" type="checkbox" checked />
+    <label for="loop-${id}">Loop</label>
+  </div>
+  `;
   listEl.appendChild(item);
 
   const btn=document.getElementById('btn-'+id);
+  const loopCheckbox=document.getElementById('loop-'+id);
+  loopCheckbox.addEventListener('change',()=>{audio.loop=loopCheckbox.checked;});
+
   btn.addEventListener('click',()=>{
     audioCtx.resume();
     if(audio.paused){
